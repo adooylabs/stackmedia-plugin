@@ -1,0 +1,13 @@
+{
+  "name": "stackdmedia",
+  "version": "0.1.0",
+  "description": "UGC ad content creation toolkit — generate creative briefs and platform-optimized scripts for TikTok, Reels, and YouTube Shorts",
+  "author": {
+    "name": "Audee Velasco",
+    "email": "audee@stackdapps.io"
+  },
+  "homepage": "https://github.com/StackdApps/stackdmedia-plugin",
+  "repository": "https://github.com/StackdApps/stackdmedia-plugin",
+  "license": "UNLICENSED",
+  "keywords": ["ugc", "ads", "tiktok", "reels", "shorts", "scripts", "content-creation"]
+}

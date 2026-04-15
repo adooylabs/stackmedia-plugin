@@ -12,7 +12,7 @@
     {
       "name": "stackdmedia",
       "version": "0.1.0",
-      "source": ".",
+      "source": "./plugin",
       "description": "UGC ad content creation toolkit — generate creative briefs and platform-optimized scripts for TikTok, Instagram, YouTube Shorts, YouTube long-form, and LinkedIn"
     }
   ]
