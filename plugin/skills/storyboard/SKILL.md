@@ -96,19 +96,30 @@ Always save storyboard output to files — never return as inline text only.
 
 **Folder:** Create a `storyboards/` subfolder inside the current campaign or project directory.
 
-**One file per platform/script:**
+**Determining the platform value:**
+- Infer from the script file used as input (e.g., `tiktok-scripts.md` → `tiktok`, `youtube-shorts-scripts.md` → `youtube-shorts`, `youtube-long-scripts.md` → `youtube-long`)
+- If the script covers multiple platforms, use the platform specified in the script's Format Label
+- If platform is still ambiguous, ask the user before generating: "Which platform is this storyboard for? (tiktok / instagram / youtube-shorts / youtube-long / linkedin)"
+
+**Supported platform values (use exactly as shown):**
+`tiktok` | `instagram` | `youtube-shorts` | `youtube-long` | `linkedin`
+
+**Naming convention — one file per platform per script variation:**
 ```
 storyboards/
-├── tiktok-storyboard.md
+├── tiktok-storyboard.md          ← single variation
+├── tiktok-storyboard-v2.md       ← second variation of the same platform
 ├── instagram-storyboard.md
 ├── youtube-shorts-storyboard.md
 ├── youtube-long-storyboard.md
 └── linkedin-storyboard.md
 ```
 
-**Naming convention:** `[platform]-storyboard.md` — use the platform name in lowercase with hyphens.
+- First variation: `[platform]-storyboard.md`
+- Additional variations of the same platform: `[platform]-storyboard-v[N].md` (v2, v3, ...)
+- Never combine multiple platforms or variations into a single file.
 
-**If storyboarding multiple scripts in one session**, create all files in the same `storyboards/` folder. Do not combine multiple platforms into a single file.
+**If storyboarding multiple scripts in one session**, create all files in the same `storyboards/` folder. Run the skill once per script variation.
 
 **If the campaign folder is unknown**, ask the user where to save before generating.
 
@@ -121,4 +132,4 @@ Parse the provided script section by section (Hook, Body, CTA). Create one story
 - Creator wardrobe/appearance notes
 - Any special equipment recommendations (gimbal, macro lens, ring light, etc.)
 
-Then save the output to `storyboards/[platform]-storyboard.md` as specified above. Use the Write tool to create the file.
+Then save the output to `storyboards/[platform]-storyboard.md` (or `storyboards/[platform]-storyboard-v[N].md` for additional variations) as specified above. Use the Write tool to create the file.
