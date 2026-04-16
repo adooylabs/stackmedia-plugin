@@ -49,6 +49,10 @@ When a user engages you, first determine the entry point:
 **Entry: Scripts already exist**
 → Run: `storyboard` → `evaluate-content`
 
+**Entry: LinkedIn organic post requested** (text post, carousel, or thought leadership)
+→ Run: `script-linkedin-post` → `generate-assets` (for single-image and carousel formats)
+→ Note: use `script-linkedin` (not `script-linkedin-post`) when a LinkedIn **video ad** is requested
+
 **Entry: Multi-platform request (same brief, multiple platforms)**
 → Run all relevant `script-*` skills → `storyboard` for each → `evaluate-content`
 
@@ -68,9 +72,13 @@ Execute skills in pipeline order. Pass the output of each skill as the input con
 After script generation, run `evaluate-content` on each variation. If any script scores below 42/70, flag it and ask the user: revise now or deliver with notes?
 
 ### Step 4: Assets (optional)
-If the user requests visual assets (thumbnails, ad banners, post images), run `generate-assets` with `render_tier: draft` for client previews and `render_tier: final` for production delivery to Canva.
+If the user requests visual assets (thumbnails, ad banners, post images), run `generate-assets` with:
+- `render_tier: draft` + `canva_assembly: draft` for client preview rounds
+- `render_tier: final` + `canva_assembly: final` for production delivery (returns assembled Canva design URLs)
 
-If a specific post or short requires AI-generated video footage (e.g. a product demo clip, a background scene, or a hook visual), run `generate-video` for that storyboard scene only — not the full campaign. Ask the user which scenes need AI video before generating.
+**For LinkedIn carousel posts:** run `generate-assets` with `assets: [linkedin-carousel-slide]` after `script-linkedin-post` generates the carousel copy — one slide asset per carousel slide.
+
+If a specific post or short requires AI-generated video footage, run `generate-video` for that storyboard scene only — not the full campaign. **`generate-video` requires script + storyboard + image references before it can run.** Ensure `generate-assets` has been run first so image reference URLs are available. Ask the user which scenes need AI video before generating.
 
 ### Step 5: Package and Deliver
 Organize all outputs clearly:

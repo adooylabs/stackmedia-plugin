@@ -36,9 +36,9 @@ generate-brief
 
 ## Canva Integration Note
 
-This skill outputs **Canva-ready design specifications**. Each spec contains all information needed to build the design in Canva manually today.
+This skill generates images via Kie.ai Nano Banana and — on `canva_assembly: final` — **automatically assembles the full Canva design**: creates the design at correct dimensions, places the generated image as background, and adds all text layers as editable Canva elements. The result is a ready-to-edit Canva design URL, not just loose assets.
 
-When the Canva Connect API integration is live, these specs will be used to programmatically create designs, apply brand kits, and bulk export files. See `references/canva-integration.md` for preparation steps and API roadmap.
+See `references/canva-integration.md` for the full MCP call sequence and setup requirements.
 
 ---
 
@@ -78,29 +78,50 @@ When translating a design spec into a Nano Banana image prompt:
 [Subject/key visual], [composition], [background], [lighting], [mood/style], [aspect ratio], high quality, professional photography, commercial advertising
 ```
 
-### Canva Upload Flow (Final tier only)
+### Image Validation (All tiers)
 
-After Nano Banana generates the image:
-1. Call `upload-asset-from-url` with the generated image URL and asset name
-2. The returned Canva asset ID is included in the output spec
-3. Use the asset ID in Canva's design editor to place the generated image
-4. Apply text layers, brand kit colors, and CTA elements manually or via Canva API
+After Nano Banana returns an image, visually inspect the thumbnail to confirm it contains **no embedded text, logos, or typography**. If text artifacts are present, regenerate with the prompt adjusted (strengthen the avoid-text rule: append "absolutely no text, no words, no letters, no typography, no labels" to the prompt).
+
+### Canva Design Assembly (controlled by `canva_assembly` flag)
+
+**`canva_assembly: skip`** — Return the image URL only. No Canva interaction.
+
+**`canva_assembly: draft`** (default) — Upload only:
+1. Call `mcp__claude_ai_Canva__upload-asset-from-url` with the image URL and asset name
+2. Return the Canva Asset ID in the spec — designer assembles manually
+
+**`canva_assembly: final`** — Full design assembly:
+1. `mcp__claude_ai_Canva__upload-asset-from-url` — upload the Nano Banana image, receive Asset ID
+2. `mcp__claude_ai_Canva__generate-design-structured` — create a new design at the correct platform dimensions (see Asset Type Specifications for exact px), using a clean single-image layout
+3. `mcp__claude_ai_Canva__start-editing-transaction` — open an editing session on the new design
+4. `mcp__claude_ai_Canva__perform-editing-operations` — insert the uploaded asset as the full-bleed background image, then add each row from the **Text Layers** table as an editable text element at the specified position, font style, size, and color
+5. `mcp__claude_ai_Canva__commit-editing-transaction` — save and close the editing session
+6. `mcp__claude_ai_Canva__get-design-thumbnail` — retrieve a preview thumbnail URL
+7. Return the Canva design URL and thumbnail in the spec
+
+**Cost note:** `canva_assembly: final` consumes Canva API quota — use `draft` for iteration rounds and `final` only for production delivery.
 
 ---
 
 ## Configuration (AssetConfig)
 
 ```yaml
-assets:        # Array of asset types to generate
-               # Options: instagram-post | instagram-carousel | instagram-story |
-               #          tiktok-cover | youtube-thumbnail | youtube-channel-art |
-               #          linkedin-post | ad-banners | email-header | all
-brand:         # Brand name — used for file naming and Canva folder organization
-variations:    # Number of design directions per asset: 1 | 2 | 3
-render_tier:   # draft | final
-               # draft  = Nano Banana 2K ($0.02/image) — fast previews, client review
-               # final  = Nano Banana 4K ($0.04/image) — production quality, auto-uploads to Canva
-               # default: draft
+assets:          # Array of asset types to generate
+                 # Options: instagram-post | instagram-carousel | instagram-story |
+                 #          tiktok-cover | youtube-thumbnail | youtube-channel-art |
+                 #          linkedin-post | linkedin-carousel-slide |
+                 #          ad-banners | email-header | all
+brand:           # Brand name — used for file naming and Canva folder organization
+variations:      # Number of design directions per asset: 1 | 2 | 3
+render_tier:     # draft | final
+                 # draft  = Nano Banana 2K ($0.02/image) — fast previews, client review
+                 # final  = Nano Banana 4K ($0.04/image) — production quality
+                 # default: draft
+canva_assembly:  # skip | draft | final
+                 # skip   = image generation only, no Canva interaction
+                 # draft  = generate image + upload to Canva (returns Asset ID)
+                 # final  = generate image + upload + assemble full Canva design with text layers
+                 # default: draft
 ```
 
 **Example:**
@@ -362,6 +383,37 @@ Generate all 4 sizes as a set. Copy must scale — the headline that works at 12
 
 ---
 
+### 10. LinkedIn Carousel Slide
+
+Used with the `script-linkedin-post` skill (carousel format). Each carousel is a set of 5–10 slides produced as individual image assets.
+
+**Format:** 1080x1080 px (square) — renders cleanly both in the LinkedIn carousel viewer and as standalone posts
+
+**Safe Zones:**
+- Keep all critical content within the inner 900x900 px
+- Leave the right edge of slides 1 through N-1 visually "open" — the carousel bleeds into the next slide
+
+**Required Elements per slide:**
+- Slide 1 (Cover): Bold headline, key visual, swipe prompt ("Swipe →")
+- Middle slides: Short title, 1–2 lines of body copy, supporting visual
+- Last slide (CTA): Clear ask, brand name, URL or handle
+
+**Copy Guidelines:**
+| Layer | Max Characters |
+|-------|----------------|
+| Slide headline / title | 40 characters |
+| Body copy | 120 characters |
+| Swipe prompt (slide 1 only) | 20 characters |
+| CTA (last slide) | 30 characters |
+
+**Slide numbering in file names:** `[brand]-linkedin-carousel-slide-[N]-v[variation].[ext]`
+
+**Design Direction:** Maintain consistent layout across all slides — same logo position, same margin grid, same font sizing. Use a visual "connecting" element (color band, shape, or overlapping graphic) that flows from slide to slide to reward swiping. Each slide must stand alone as a readable unit — a viewer who drops in on slide 3 should still get value.
+
+**AI Image Prompt guidance:** For carousel slides, generate a supporting background image per slide that reinforces the slide's one idea. Avoid busy compositions — the image is a backdrop for the text. Keep subject matter consistent across the set (same brand color world, same photographic style, same mood).
+
+---
+
 ## Output Format
 
 For each asset, produce one spec block per variation using this exact format:
@@ -403,7 +455,13 @@ For each asset, produce one spec block per variation using this exact format:
 [URL returned by Nano Banana — populated after generation]
 
 ### Canva Asset ID
-[Asset ID after upload-asset-from-url — populated for final tier only]
+[Asset ID after upload-asset-from-url — populated when canva_assembly is draft or final]
+
+### Canva Design URL
+[URL of the assembled Canva design — populated when canva_assembly: final only]
+
+### Canva Thumbnail
+[Preview thumbnail URL — populated when canva_assembly: final only]
 ```
 
 ---
@@ -414,14 +472,22 @@ Given the creative brief, brand assets, and AssetConfig, produce Canva-ready des
 
 **Step-by-step:**
 
-1. **Parse inputs:** Extract brand colors, fonts, key visual description, campaign hook, and CTA from the brief.
-2. **Confirm asset list:** If `assets: all`, generate specs for all 9 asset types. Otherwise generate only the specified types.
+1. **Parse inputs:** Extract brand colors, fonts, key visual description, campaign hook, and CTA from the brief. Confirm `canva_assembly` setting — if not specified, default to `draft`.
+2. **Confirm asset list:** If `assets: all`, generate specs for all 10 asset types. Otherwise generate only the specified types.
 3. **Apply brief to each asset:** Use the campaign's hook, proof points, and CTA to populate text layers. Do not use placeholder copy — generate real copy derived from the brief.
 4. **Generate AI prompts:** For each asset variation, construct a Nano Banana image prompt using the rules in the AI Image Generation section above. Add the prompt to each spec block under `### AI Image Prompt`.
-5. **Generate images via Kie.ai:** Call Nano Banana with each prompt at the appropriate tier (2K for draft, 4K for final). Populate `### Generated Image` with the returned URL.
-6. **Upload to Canva (final tier only):** For each generated image, call `upload-asset-from-url` with the image URL. Populate `### Canva Asset ID` with the returned ID.
-7. **Output specs:** One complete spec block per asset per variation, with all fields populated including the AI prompt, image URL, and (if final) Canva asset ID.
-8. **Close with file list:** End with a summary table of all assets and their Canva asset IDs (final) or preview URLs (draft).
+5. **Generate images via Kie.ai:** Call Nano Banana with each prompt at the appropriate tier (2K for draft, 4K for final). Validate the returned image — if text artifacts appear in the thumbnail, regenerate with a stronger no-text instruction. Populate `### Generated Image` with the final URL.
+6. **Canva workflow (per `canva_assembly` setting):**
+   - `skip`: skip steps 6a–6e entirely
+   - `draft`: run step 6a only
+   - `final`: run all steps 6a–6e
+   - **6a.** Call `mcp__claude_ai_Canva__upload-asset-from-url` → populate `### Canva Asset ID`
+   - **6b.** Call `mcp__claude_ai_Canva__generate-design-structured` at correct dimensions → receive design ID
+   - **6c.** Call `mcp__claude_ai_Canva__start-editing-transaction` on the design
+   - **6d.** Call `mcp__claude_ai_Canva__perform-editing-operations` to place image as background and add each text layer from the spec
+   - **6e.** Call `mcp__claude_ai_Canva__commit-editing-transaction`, then `mcp__claude_ai_Canva__get-design-thumbnail` → populate `### Canva Design URL` and `### Canva Thumbnail`
+7. **Output specs:** One complete spec block per asset per variation, with all fields populated.
+8. **Close with file list:** End with a summary table of all assets, their status, and Canva design URLs (final assembly) or Asset IDs (draft) or preview URLs (skip).
 
 Each spec must be detailed enough for a designer to open Canva and build the asset immediately — without asking any follow-up questions.
 
