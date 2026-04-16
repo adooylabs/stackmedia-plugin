@@ -124,6 +124,15 @@ Before generating output, verify the following are present:
 
 **If any critical input is missing:** Do not fail silently. At the top of your output, note which inputs are missing and state the assumptions you made to compensate. Then proceed with your best judgment.
 
+## File Output
+
+Always save script output to a file — never return as inline text only.
+
+**Folder:** Create a `scripts/` subfolder inside the current campaign or project directory.
+**File:** `scripts/youtube-long-scripts.md`
+
+If the campaign folder is unknown, ask the user where to save before generating. Use the Write tool to create the file.
+
 ## Your Task
 
-Given the creative brief and configuration, generate the requested number of YouTube long-form ad script variations. Each should use a different hook approach and storytelling angle. Prioritize authenticity, trust-building, and a clear narrative arc from problem to solution to conversion.
+Given the creative brief and configuration, generate the requested number of YouTube long-form ad script variations. Each should use a different hook approach and storytelling angle. Prioritize authenticity, trust-building, and a clear narrative arc from problem to solution to conversion. Save the output to `scripts/youtube-long-scripts.md` as specified above.

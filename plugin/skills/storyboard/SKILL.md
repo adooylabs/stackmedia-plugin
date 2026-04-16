@@ -90,6 +90,28 @@ When the brief includes brand aesthetic or styling notes, add a **Mood Board** s
 - **Set/environment**: surface textures, props, background elements
 - **Visual references**: describe 2-3 real-world visual references (e.g., "looks like a Glossier campaign", "feels like a Notion ad") without infringing on actual brand assets
 
+## File Output
+
+Always save storyboard output to files — never return as inline text only.
+
+**Folder:** Create a `storyboards/` subfolder inside the current campaign or project directory.
+
+**One file per platform/script:**
+```
+storyboards/
+├── tiktok-storyboard.md
+├── instagram-storyboard.md
+├── youtube-shorts-storyboard.md
+├── youtube-long-storyboard.md
+└── linkedin-storyboard.md
+```
+
+**Naming convention:** `[platform]-storyboard.md` — use the platform name in lowercase with hyphens.
+
+**If storyboarding multiple scripts in one session**, create all files in the same `storyboards/` folder. Do not combine multiple platforms into a single file.
+
+**If the campaign folder is unknown**, ask the user where to save before generating.
+
 ## Your Task
 
 Parse the provided script section by section (Hook, Body, CTA). Create one storyboard block per scene or shot change. Add a **Production Notes** section at the end summarizing:
@@ -98,3 +120,5 @@ Parse the provided script section by section (Hook, Body, CTA). Create one story
 - Key props needed
 - Creator wardrobe/appearance notes
 - Any special equipment recommendations (gimbal, macro lens, ring light, etc.)
+
+Then save the output to `storyboards/[platform]-storyboard.md` as specified above. Use the Write tool to create the file.
