@@ -106,6 +106,15 @@ Before generating output, verify the following are present:
 
 **If any critical input is missing:** Do not fail silently. At the top of your output, note which inputs are missing and state the assumptions you made to compensate. Then proceed with your best judgment.
 
+## File Output
+
+Always save script output to a file — never return as inline text only.
+
+**Folder:** Create a `scripts/` subfolder inside the current campaign or project directory.
+**File:** `scripts/instagram-scripts.md`
+
+If the campaign folder is unknown, ask the user where to save before generating. Use the Write tool to create the file.
+
 ## Your Task
 
-Given the creative brief and configuration, generate the requested number of Instagram ad script variations. Each variation should use a different hook approach. Make them feel authentic to Instagram culture — polished, aspirational, and creator-native — while driving clear, measurable action.
+Given the creative brief and configuration, generate the requested number of Instagram ad script variations. Each variation should use a different hook approach. Make them feel authentic to Instagram culture — polished, aspirational, and creator-native — while driving clear, measurable action. Save the output to `scripts/instagram-scripts.md` as specified above.
