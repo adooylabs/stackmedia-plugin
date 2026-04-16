@@ -1,66 +1,72 @@
 # Canva Integration Reference
 
-How `generate-assets` works with Canva today, and what the Canva Connect API integration will enable.
+How `generate-assets` works with Kie.ai and Canva in the current pipeline.
 
 ---
 
-## Current State — Manual Canva Workflow
+## Current Pipeline — Kie.ai Nano Banana + Canva
 
-The `generate-assets` skill currently outputs **Canva-ready design specifications** — structured briefs with exact dimensions, layout descriptions, text layer copy, color values, and Canva template recommendations.
+The `generate-assets` skill now generates actual images using **Kie.ai Nano Banana** and uploads them to Canva for design assembly.
 
-A designer takes each spec and:
-1. Opens Canva and searches for the recommended template type
-2. Sets the canvas to the exact dimensions specified
-3. Applies brand colors from the brand kit (or manually from the hex values in the spec)
-4. Places the key visual (product image, lifestyle photo, etc.) as described in the Visual Direction section
-5. Adds text layers with the copy and styling from the Text Layers table
-6. Exports using the format and quality settings from `references/asset-specs.md`
+### Full Workflow
 
-This workflow is fully functional and produces campaign-ready assets today. The specs are written to eliminate designer guesswork — every decision about layout, copy, color, and hierarchy is already made.
-
----
-
-## Future State — Canva Connect API Integration
-
-When the Canva Connect API is connected to the StackdMedia platform, `generate-assets` will trigger **programmatic design creation** automatically.
-
-### What the API will enable:
-
-- **Programmatic design creation** from templates — the skill will select a template by ID and populate it with campaign-specific copy, colors, and assets
-- **Brand kit auto-application** — brand colors, fonts, and logos will be applied automatically from a stored Canva brand kit linked to the client
-- **Asset upload** — product images and photography will be uploaded to Canva directly via the API before design creation
-- **Bulk export** — all 9 asset types for a campaign can be exported in a single automated run
-- **Shareable Canva links** — the skill will return direct Canva design links so clients or designers can review and tweak before final export
-- **Folder organization** — designs will be automatically organized into Canva folders by client and campaign
-
-### What the API cannot currently do (as of early 2026):
-
-- **AI-generated images** — Canva's AI image generation (Magic Media) is not accessible programmatically via the Connect API; images must be provided as uploads
-- **Font licensing automation** — premium fonts in Canva require the account to have the appropriate subscription; the API cannot grant font access
-- **Template creation** — the API can use existing templates but cannot create new custom templates programmatically
-- **Direct publish to social** — the API handles design creation and export, not publishing; social posting requires a separate integration
-
----
-
-## Preparing Now for a Smooth API Integration
-
-Take these steps in Canva today so the API connection requires minimal rework:
-
-### Naming Conventions
-
-Use consistent file naming in Canva that matches the `generate-assets` output format:
 ```
-[brand]-[asset-type]-v[N].[ext]
+Design Spec
+    │
+    ▼
+Nano Banana 2K or 4K         ← Kie.ai MCP (KIE_AI_API_KEY)
+(image generation)
+    │
+    ▼
+Generated Image URL
+    │
+    ├── Draft tier: return as preview URL
+    │
+    └── Final tier:
+            │
+            ▼
+        upload-asset-from-url  ← Canva MCP
+        (upload to Canva)
+            │
+            ▼
+        Canva Asset ID
+        (ready for design assembly)
+```
+
+### Setup Requirements
+
+1. **Kie.ai MCP server** must be connected with `KIE_AI_API_KEY` set
+2. **Canva MCP server** must be connected for final-tier uploads
+3. Both MCP servers are available in Claude Code after setup
+
+### Cost Reference
+
+| Tier | Model | Resolution | Cost | Use Case |
+|------|-------|-----------|------|----------|
+| Draft | Nano Banana 2K | 2048px native | $0.02/image | Client previews, iteration |
+| Final | Nano Banana 4K | 4096px (intelligent upscale) | $0.04/image | Production delivery |
+
+---
+
+## Canva Asset Naming
+
+Use consistent naming when uploading assets to Canva:
+
+```
+[brand]-[asset-type]-v[N]-[tier]
 
 Examples:
-formfocus-instagram-post-v1.jpg
-formfocus-youtube-thumbnail-v2.png
-formfocus-ad-banners-feed-v1.jpg
+vaultsync-instagram-post-v1-draft
+vaultsync-youtube-thumbnail-v2-final
+vaultsync-ad-banners-feed-v1-final
 ```
 
-### Canva Folder Structure
+---
 
-Organize Canva by client and campaign now. The API will mirror this structure:
+## Canva Folder Structure
+
+Organize assets by brand and campaign:
+
 ```
 Canva Root/
   └── [Brand Name]/
@@ -73,9 +79,11 @@ Canva Root/
               └── Email/
 ```
 
-### Brand Kit Setup Checklist
+---
 
-Before the API goes live, ensure each client's Canva Brand Kit contains:
+## Brand Kit Setup Checklist
+
+Before generating final-tier assets, ensure the client's Canva Brand Kit contains:
 - [ ] Primary brand color (hex)
 - [ ] Secondary / accent colors (hex)
 - [ ] Background color (hex)
@@ -87,17 +95,21 @@ Before the API goes live, ensure each client's Canva Brand Kit contains:
 
 ---
 
-## Webhook / Automation Flow (When API is Live)
+## What Canva Handles (Post-Upload)
 
-When the Canva Connect API integration is active, the `generate-assets` skill will:
+After images are uploaded via Kie.ai → Canva:
 
-1. Parse the design specs it generates
-2. POST to the Canva Connect API to create each design from the appropriate template
-3. Upload brand assets and campaign visuals via the Canva asset upload endpoint
-4. Trigger bulk export for all requested asset types
-5. Return a response that includes:
-   - Shareable Canva design URLs (for designer review)
-   - Direct download links for exported files
-   - Canva folder URL for the full campaign asset set
+1. **Text layer overlay** — headlines, CTAs, subheads added in Canva editor
+2. **Brand kit application** — brand colors, fonts, logos applied from Brand Kit
+3. **Safe zone compliance** — designer ensures content stays within safe zones per asset type
+4. **Export** — final files exported per platform specs (JPG/PNG, sRGB, correct dimensions)
+5. **Shareable links** — Canva design URLs returned for client review
 
-The campaign brief, scripts, and asset links will all be available in a single StackdMedia campaign workspace — no manual file hunting across platforms.
+---
+
+## Limitations
+
+- **Canva Magic Media** is not accessible via MCP — Kie.ai Nano Banana is the image generation engine
+- **Font licensing** — premium Canva fonts require account subscription; API cannot grant font access
+- **Direct social publishing** — Canva handles design creation and export, not social posting
+- **Template creation** — the API uses existing Canva templates, not custom ones

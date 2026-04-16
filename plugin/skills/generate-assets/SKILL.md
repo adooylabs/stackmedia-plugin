@@ -19,10 +19,15 @@ generate-brief
       │                      │                      │
   script-tiktok          script-*              generate-assets
   script-instagram       (all platforms)            │
-  script-youtube-*                                  │
-  script-linkedin                                   ▼
-      │                                         storyboard
+  script-youtube-*                            Kie.ai Nano Banana
+  script-linkedin                             (2K draft / 4K final)
+      │                                             │
+      │                                      upload-asset-from-url
+      │                                        (final tier)
+      │                                             │
       └──────────────────────┴──────────────────────┘
+                             │
+                         storyboard
                              │
                      full campaign delivery
 ```
@@ -37,6 +42,52 @@ When the Canva Connect API integration is live, these specs will be used to prog
 
 ---
 
+## AI Image Generation (Kie.ai)
+
+StackdMedia generates campaign images using **Kie.ai Nano Banana** — Google Gemini-powered image generation accessible via the Kie.ai MCP server. Images are generated from the design spec, then uploaded directly to Canva for design assembly.
+
+### Two-Tier Workflow
+
+**Draft (Nano Banana 2K — $0.02/image)**
+Use during creative development and client preview rounds.
+- Resolution: 2048px native output
+- Speed: fast generation (~10-15 seconds)
+- Use for: iteration, client approval, internal review
+- Images returned as preview URLs — not uploaded to Canva
+
+**Final (Nano Banana 4K — $0.04/image)**
+Use for production-ready assets ready for campaign delivery.
+- Resolution: 4096px native output (intelligent 4K scaling)
+- Quality: highest visual fidelity, improved text rendering
+- Use for: final campaign delivery, Canva upload, export
+- Images automatically uploaded to Canva via `upload-asset-from-url`
+
+### Prompt Construction Rules
+
+When translating a design spec into a Nano Banana image prompt:
+1. **Lead with the key visual** — describe the subject first (product, person, scene)
+2. **Include composition** — foreground/background positioning from the Layout section
+3. **Specify color palette** — use hex values from brand colors as descriptors ("deep navy blue #1a237e background")
+4. **Include lighting and mood** — from the Visual Direction section
+5. **Add style keywords** — "professional product photography", "UGC lifestyle photo", "clean minimal ad creative"
+6. **Specify aspect ratio** — "square format 1:1", "vertical 9:16", "landscape 16:9"
+7. **Avoid** — words like "text", "logo", "typography" (Kie generates images, text layers are added in Canva)
+
+**Example prompt structure:**
+```
+[Subject/key visual], [composition], [background], [lighting], [mood/style], [aspect ratio], high quality, professional photography, commercial advertising
+```
+
+### Canva Upload Flow (Final tier only)
+
+After Nano Banana generates the image:
+1. Call `upload-asset-from-url` with the generated image URL and asset name
+2. The returned Canva asset ID is included in the output spec
+3. Use the asset ID in Canva's design editor to place the generated image
+4. Apply text layers, brand kit colors, and CTA elements manually or via Canva API
+
+---
+
 ## Configuration (AssetConfig)
 
 ```yaml
@@ -46,6 +97,10 @@ assets:        # Array of asset types to generate
                #          linkedin-post | ad-banners | email-header | all
 brand:         # Brand name — used for file naming and Canva folder organization
 variations:    # Number of design directions per asset: 1 | 2 | 3
+render_tier:   # draft | final
+               # draft  = Nano Banana 2K ($0.02/image) — fast previews, client review
+               # final  = Nano Banana 4K ($0.04/image) — production quality, auto-uploads to Canva
+               # default: draft
 ```
 
 **Example:**
@@ -340,6 +395,15 @@ For each asset, produce one spec block per variation using this exact format:
 
 ### Designer Notes
 [Special instructions: safe zones to respect, elements to avoid, accessibility considerations, export settings.]
+
+### AI Image Prompt
+[The exact prompt sent to Nano Banana for this variation]
+
+### Generated Image
+[URL returned by Nano Banana — populated after generation]
+
+### Canva Asset ID
+[Asset ID after upload-asset-from-url — populated for final tier only]
 ```
 
 ---
@@ -353,9 +417,11 @@ Given the creative brief, brand assets, and AssetConfig, produce Canva-ready des
 1. **Parse inputs:** Extract brand colors, fonts, key visual description, campaign hook, and CTA from the brief.
 2. **Confirm asset list:** If `assets: all`, generate specs for all 9 asset types. Otherwise generate only the specified types.
 3. **Apply brief to each asset:** Use the campaign's hook, proof points, and CTA to populate text layers. Do not use placeholder copy — generate real copy derived from the brief.
-4. **Generate variations:** If `variations: 2` or `3`, produce distinct design directions (e.g., Variation 1 = bold/product-forward, Variation 2 = lifestyle/testimonial-forward).
-5. **Output specs:** One spec block per asset per variation, using the format above.
-6. **Close with file list:** End with a summary table of all files to be created.
+4. **Generate AI prompts:** For each asset variation, construct a Nano Banana image prompt using the rules in the AI Image Generation section above. Add the prompt to each spec block under `### AI Image Prompt`.
+5. **Generate images via Kie.ai:** Call Nano Banana with each prompt at the appropriate tier (2K for draft, 4K for final). Populate `### Generated Image` with the returned URL.
+6. **Upload to Canva (final tier only):** For each generated image, call `upload-asset-from-url` with the image URL. Populate `### Canva Asset ID` with the returned ID.
+7. **Output specs:** One complete spec block per asset per variation, with all fields populated including the AI prompt, image URL, and (if final) Canva asset ID.
+8. **Close with file list:** End with a summary table of all assets and their Canva asset IDs (final) or preview URLs (draft).
 
 Each spec must be detailed enough for a designer to open Canva and build the asset immediately — without asking any follow-up questions.
 

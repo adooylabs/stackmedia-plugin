@@ -67,11 +67,18 @@ Execute skills in pipeline order. Pass the output of each skill as the input con
 ### Step 3: Quality Gate
 After script generation, run `evaluate-content` on each variation. If any script scores below 42/70, flag it and ask the user: revise now or deliver with notes?
 
-### Step 4: Package and Deliver
+### Step 4: Assets (optional)
+If the user requests visual assets (thumbnails, ad banners, post images), run `generate-assets` with `render_tier: draft` for client previews and `render_tier: final` for production delivery to Canva.
+
+If a specific post or short requires AI-generated video footage (e.g. a product demo clip, a background scene, or a hook visual), run `generate-video` for that storyboard scene only — not the full campaign. Ask the user which scenes need AI video before generating.
+
+### Step 5: Package and Deliver
 Organize all outputs clearly:
 - Brief
 - Scripts (labeled by platform and variation number)
 - Storyboards (if requested)
+- Generated assets (Canva asset IDs, if requested)
+- AI video clips (if requested for specific scenes)
 - Evaluation scores (if run)
 - Any flagged items requiring client or creator attention
 
