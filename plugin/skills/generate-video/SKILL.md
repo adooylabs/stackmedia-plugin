@@ -72,15 +72,34 @@ input_type: storyboard
 
 ## Required Inputs & Validation
 
-Before generating, confirm the following are present. If missing, ask before proceeding.
+Before generating, all three upstream artifacts must be present. **Do not proceed with missing inputs — fail fast and tell the user exactly which files are missing and which skill to run.**
 
-| Input | Required | Notes |
-|-------|----------|-------|
-| Script or storyboard | Yes | Output from `storyboard` skill (preferred) or `script-*` skill |
-| Platform | Yes | Determines aspect ratio and duration defaults |
-| render_tier | Yes | draft or final — confirm before generating finals (cost) |
-| Brand name | Yes | Used for file naming |
-| Key subject | Yes | Main person, product, or scene — anchors prompt construction |
+| Input | Required | Expected file path | Upstream skill |
+|-------|----------|--------------------|----------------|
+| Script file | **Yes** | `scripts/[platform]-scripts.md` | `script-tiktok`, `script-instagram`, `script-linkedin`, `script-youtube-shorts`, or `script-youtube-long` |
+| Storyboard file | **Yes** | `storyboards/[platform]-storyboard.md` | `storyboard` |
+| Image references | **Yes** | At least 1 URL from `generate-assets` output (subject, product, or creator image) | `generate-assets` |
+| Platform | Yes | Infer from script filename if not provided | — |
+| render_tier | Yes | `draft` or `final` — confirm before generating finals (cost) | — |
+| Brand name | Yes | Used for file naming | — |
+| Key subject | Yes | Main person, product, or scene — anchors prompt construction | — |
+
+**Fail-fast behavior:** If script, storyboard, or image references are missing, stop immediately and output:
+
+```
+❌ Missing required inputs for generate-video:
+
+- Script: [not found / found at scripts/[platform]-scripts.md]
+- Storyboard: [not found / found at storyboards/[platform]-storyboard.md]
+- Image references: [none provided]
+
+Run the following skill(s) first:
+→ [list missing upstream skill(s)]
+
+Then re-invoke generate-video once all inputs are ready.
+```
+
+Do not attempt to generate video with incomplete inputs. Do not ask the user if they want to proceed anyway.
 
 **Cost warning:** Before triggering `final` tier, display the estimated cost to the user:
 - Seedance 2.0 (draft): ~$0.05-0.15/video
@@ -138,13 +157,16 @@ Generated prompt:
 "Extreme close-up shot, slightly low angle, static camera. Young woman 25-30 in casual athleisure holds a smartphone toward the camera showing an app screen, looking directly at lens with a slight self-deprecating smile. Bright home office setting, natural window light from left, clean background. UGC-style authentic feel, relatable lifestyle video, vertical 9:16 format."
 ```
 
-### From Script (Text-to-Video)
+### Image References (All prompt types)
 
-When no storyboard exists, extract from the script:
-1. Each timestamped section becomes one clip
-2. Describe the visual action implied by the spoken lines
-3. Specify creator type (age range, style, energy level from Director's Note)
-4. Include setting from context in the brief
+Image references from `generate-assets` are attached to the Kie.ai call as **style and subject anchors** to ensure visual consistency across clips — same creator appearance, same product look, same brand color world.
+
+For each clip prompt, append the reference image URL(s) to the Kie.ai call in the `reference_images` parameter (Seedance 2.0, Veo 3, and Kling 3.0 all support this). Use:
+- The **subject/creator image** if the video features a person (maintains appearance consistency)
+- The **product image** if the video features a product (maintains product consistency)
+- The **brand lifestyle image** if the video is scene/setting focused
+
+List reference images explicitly in the spec block under `### Reference Images Used`.
 
 ### Prompt Rules
 
@@ -172,6 +194,9 @@ For each generated clip:
 
 ### Prompt Used
 [Exact prompt sent to the model]
+
+### Reference Images Used
+[URLs of image references attached to this clip — from generate-assets output]
 
 ### Generated Video
 [Video URL returned by Kie.ai]
